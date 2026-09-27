@@ -11,3 +11,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+// ⚠️ Mot de passe pour débloquer l'onglet Administration.
+// Ce fichier est visible dans le code source par n'importe qui d'un peu curieux :
+// c'est un garde-fou simple contre les joueurs, pas une vraie sécurité.
+const ADMIN_PASSWORD = "Kamouiller25072000";

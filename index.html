@@ -39,7 +39,6 @@
 
     <div class="account-box">
       <span class="name" id="account-name">—</span>
-      <span class="role hidden" id="account-admin-badge">ADMIN</span>
       <button class="ghost" id="logout-btn">Déconnexion</button>
     </div>
   </div>
@@ -48,7 +47,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="browse">Consulter les ventes</button>
       <button class="tab" data-tab="add">+ Ajouter une vente</button>
-      <button class="tab hidden" data-tab="admin" id="admin-tab-btn">Administration</button>
+      <button class="tab" data-tab="admin" id="admin-tab-btn">Administration</button>
     </div>
 
     <!-- ---- CONSULTER ---- -->
@@ -115,6 +114,26 @@
           <div class="preview-box" id="wanted-preview">
             <span style="color:var(--text-dim); font-size:.8rem">Aucun Pokémon sélectionné</span>
           </div>
+
+          <div class="section-title">IVs souhaités (0–31)</div>
+          <div class="stat-grid">
+            <div class="field"><label>PV</label><input type="number" min="0" max="31" id="iv-wanted-hp" value="0"></div>
+            <div class="field"><label>Attaque</label><input type="number" min="0" max="31" id="iv-wanted-atk" value="0"></div>
+            <div class="field"><label>Défense</label><input type="number" min="0" max="31" id="iv-wanted-def" value="0"></div>
+            <div class="field"><label>Att. Spé.</label><input type="number" min="0" max="31" id="iv-wanted-spa" value="0"></div>
+            <div class="field"><label>Déf. Spé.</label><input type="number" min="0" max="31" id="iv-wanted-spd" value="0"></div>
+            <div class="field"><label>Vitesse</label><input type="number" min="0" max="31" id="iv-wanted-spe" value="0"></div>
+          </div>
+
+          <div class="section-title">EVs souhaités (0–252)</div>
+          <div class="stat-grid">
+            <div class="field"><label>PV</label><input type="number" min="0" max="252" id="ev-wanted-hp" value="0"></div>
+            <div class="field"><label>Attaque</label><input type="number" min="0" max="252" id="ev-wanted-atk" value="0"></div>
+            <div class="field"><label>Défense</label><input type="number" min="0" max="252" id="ev-wanted-def" value="0"></div>
+            <div class="field"><label>Att. Spé.</label><input type="number" min="0" max="252" id="ev-wanted-spa" value="0"></div>
+            <div class="field"><label>Déf. Spé.</label><input type="number" min="0" max="252" id="ev-wanted-spd" value="0"></div>
+            <div class="field"><label>Vitesse</label><input type="number" min="0" max="252" id="ev-wanted-spe" value="0"></div>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -129,7 +148,7 @@
     <section id="tab-admin" class="hidden">
       <h2 style="font-size:1.05rem">Comptes</h2>
       <table class="admin-table">
-        <thead><tr><th>Nom</th><th>Prénom</th><th>Rôle</th><th>Annonces actives</th><th></th></tr></thead>
+        <thead><tr><th>Nom</th><th>Prénom</th><th>Annonces actives</th><th></th></tr></thead>
         <tbody id="admin-accounts-body"></tbody>
       </table>
 

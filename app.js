@@ -9,6 +9,7 @@ const MAX_LISTINGS_PER_ACCOUNT = 5;
 
 let currentAccountId = null;
 let currentAccount = null;
+let isAdminUnlocked = false;
 let selectedType = "vente";
 let selectedPoke = null;   // {id, name}
 let selectedWanted = null; // {id, name}
@@ -60,12 +61,8 @@ async function handleLogin() {
     const snap = await ref.get();
 
     if (!snap.exists) {
-      // premier compte jamais créé => admin par défaut
-      const anyAccount = await db.collection("accounts").limit(1).get();
-      const isFirstEver = anyAccount.empty;
       await ref.set({
         prenom, nom,
-        admin: isFirstEver,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -90,8 +87,6 @@ async function loginAs(accountId) {
   $("#login-screen").classList.add("hidden");
   $("#app").classList.remove("hidden");
   $("#account-name").textContent = `${currentAccount.prenom} ${currentAccount.nom}`;
-  $("#account-admin-badge").classList.toggle("hidden", !currentAccount.admin);
-  $("#admin-tab-btn").classList.toggle("hidden", !currentAccount.admin);
 
   touchPresence();
   setInterval(touchPresence, 20_000);
@@ -152,14 +147,26 @@ function listenPresence() {
 
 $all(".tab").forEach(btn => {
   btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+
+    if (tab === "admin" && !isAdminUnlocked) {
+      const pwd = prompt("Mot de passe administrateur :");
+      if (pwd === null) return; // annulé
+      if (pwd !== ADMIN_PASSWORD) {
+        alert("Mot de passe incorrect.");
+        return;
+      }
+      isAdminUnlocked = true;
+    }
+
     $all(".tab").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    const tab = btn.dataset.tab;
     $("#tab-browse").classList.toggle("hidden", tab !== "browse");
     $("#tab-add").classList.toggle("hidden", tab !== "add");
     $("#tab-admin").classList.toggle("hidden", tab !== "admin");
     if (tab === "admin") renderAdmin();
     if (tab === "add") updateLimitNote();
+    renderListings(); // rafraîchit les boutons "Retirer" si l'admin vient d'être débloqué
   });
 });
 
@@ -187,7 +194,7 @@ function renderListings() {
 
   grid.innerHTML = allListings.map(l => {
     const isEchange = l.type === "echange";
-    const canRemove = currentAccount.admin || l.sellerAccountId === currentAccountId;
+    const canRemove = isAdminUnlocked || l.sellerAccountId === currentAccountId;
     return `
       <div class="card ${isEchange ? "echange" : ""}" data-id="${l.id}">
         <div class="card-top">
@@ -212,6 +219,13 @@ function renderListings() {
             <tr><td class="k">EV</td><td>PV ${l.evs.hp}</td><td>Atk ${l.evs.atk}</td><td>Def ${l.evs.def}</td><td>ASp ${l.evs.spa}</td><td>DSp ${l.evs.spd}</td><td>Vit ${l.evs.spe}</td></tr>
           </table>
         </div>
+        ${isEchange ? `
+        <div class="stats-row">
+          <table>
+            <tr><td class="k">IV voulus</td><td>PV ${l.ivsWanted.hp}</td><td>Atk ${l.ivsWanted.atk}</td><td>Def ${l.ivsWanted.def}</td><td>ASp ${l.ivsWanted.spa}</td><td>DSp ${l.ivsWanted.spd}</td><td>Vit ${l.ivsWanted.spe}</td></tr>
+            <tr><td class="k">EV voulus</td><td>PV ${l.evsWanted.hp}</td><td>Atk ${l.evsWanted.atk}</td><td>Def ${l.evsWanted.def}</td><td>ASp ${l.evsWanted.spa}</td><td>DSp ${l.evsWanted.spd}</td><td>Vit ${l.evsWanted.spe}</td></tr>
+          </table>
+        </div>` : ""}
         <div class="card-footer">
           <div class="seller">Dresseur : <b></b></div>
           ${canRemove ? `<button class="danger remove-btn" data-id="${l.id}">Retirer</button>` : ""}
@@ -360,6 +374,16 @@ $("#submit-listing").addEventListener("click", async () => {
     listing.price = price;
   } else {
     listing.wantedPokemonId = selectedWanted.id;
+    listing.ivsWanted = {
+      hp: clampInt($("#iv-wanted-hp").value, 0, 31), atk: clampInt($("#iv-wanted-atk").value, 0, 31),
+      def: clampInt($("#iv-wanted-def").value, 0, 31), spa: clampInt($("#iv-wanted-spa").value, 0, 31),
+      spd: clampInt($("#iv-wanted-spd").value, 0, 31), spe: clampInt($("#iv-wanted-spe").value, 0, 31),
+    };
+    listing.evsWanted = {
+      hp: clampInt($("#ev-wanted-hp").value, 0, 252), atk: clampInt($("#ev-wanted-atk").value, 0, 252),
+      def: clampInt($("#ev-wanted-def").value, 0, 252), spa: clampInt($("#ev-wanted-spa").value, 0, 252),
+      spd: clampInt($("#ev-wanted-spd").value, 0, 252), spe: clampInt($("#ev-wanted-spe").value, 0, 252),
+    };
   }
 
   try {
@@ -401,10 +425,8 @@ async function renderAdmin() {
     <tr data-id="${a.id}">
       <td class="cell-nom"></td>
       <td class="cell-prenom"></td>
-      <td>${a.admin ? '<span class="badge-admin">ADMIN</span>' : "—"}</td>
       <td>${allListings.filter(l => l.sellerAccountId === a.id).length}</td>
       <td>
-        <button class="ghost toggle-admin-btn" data-id="${a.id}">${a.admin ? "Retirer admin" : "Rendre admin"}</button>
         <button class="danger delete-account-btn" data-id="${a.id}">Supprimer</button>
       </td>
     </tr>
@@ -415,13 +437,6 @@ async function renderAdmin() {
     row.querySelector(".cell-prenom").textContent = a.prenom;
   });
 
-  $all(".toggle-admin-btn", accBody).forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const a = allAccounts.find(x => x.id === btn.dataset.id);
-      await db.collection("accounts").doc(a.id).update({ admin: !a.admin });
-      renderAdmin();
-    });
-  });
   $all(".delete-account-btn", accBody).forEach(btn => {
     btn.addEventListener("click", async () => {
       if (!confirm("Supprimer ce compte ? Ses annonces resteront visibles mais ne pourront plus être retirées que par un admin.")) return;
