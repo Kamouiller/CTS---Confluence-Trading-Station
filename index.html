@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTS // Cobblemon</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===================== ECRAN DE CONNEXION ===================== -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <h1>GTS <span style="color:var(--cyan)">//</span> Terminal</h1>
+    <p class="sub">Connecte-toi pour déposer ou consulter des annonces d'échange et de vente.</p>
+    <div class="field">
+      <label>Prénom</label>
+      <input type="text" id="login-prenom" placeholder="Prénom">
+    </div>
+    <div class="field">
+      <label>Nom</label>
+      <input type="text" id="login-nom" placeholder="Nom">
+    </div>
+    <button class="primary" id="login-btn" style="width:100%">Se connecter</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ===================== APPLI ===================== -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>GTS<small>COBBLEMON&nbsp;TRADE&nbsp;STATION</small></div>
+
+    <div class="online-panel">
+      <span class="led"></span>
+      <span id="online-count">0 connecté(s)</span>
+      <div class="online-list" id="online-list"></div>
+    </div>
+
+    <div class="account-box">
+      <span class="name" id="account-name">—</span>
+      <span class="role hidden" id="account-admin-badge">ADMIN</span>
+      <button class="ghost" id="logout-btn">Déconnexion</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active" data-tab="browse">Consulter les ventes</button>
+      <button class="tab" data-tab="add">+ Ajouter une vente</button>
+      <button class="tab hidden" data-tab="admin" id="admin-tab-btn">Administration</button>
+    </div>
+
+    <!-- ---- CONSULTER ---- -->
+    <section id="tab-browse">
+      <div class="grid" id="listings-grid"></div>
+      <div class="empty-state hidden" id="listings-empty">Aucune annonce active pour le moment.</div>
+    </section>
+
+    <!-- ---- AJOUTER ---- -->
+    <section id="tab-add" class="hidden">
+      <div class="form-panel">
+        <h2>Nouvelle annonce</h2>
+
+        <div class="type-switch">
+          <button type="button" class="selected vente" data-type="vente">Vente (Pokédollar)</button>
+          <button type="button" class="echange" data-type="echange">Échange</button>
+        </div>
+
+        <div class="section-title">Pokémon proposé</div>
+        <div class="field autocomplete-wrap">
+          <label>Nom du Pokémon</label>
+          <input type="text" id="poke-search" placeholder="Commence à taper un nom...">
+          <div class="autocomplete-list hidden" id="poke-suggestions"></div>
+        </div>
+        <div class="preview-box" id="poke-preview">
+          <span style="color:var(--text-dim); font-size:.8rem">Aucun Pokémon sélectionné</span>
+        </div>
+
+        <div class="section-title">IVs (0–31)</div>
+        <div class="stat-grid">
+          <div class="field"><label>PV</label><input type="number" min="0" max="31" id="iv-hp" value="0"></div>
+          <div class="field"><label>Attaque</label><input type="number" min="0" max="31" id="iv-atk" value="0"></div>
+          <div class="field"><label>Défense</label><input type="number" min="0" max="31" id="iv-def" value="0"></div>
+          <div class="field"><label>Att. Spé.</label><input type="number" min="0" max="31" id="iv-spa" value="0"></div>
+          <div class="field"><label>Déf. Spé.</label><input type="number" min="0" max="31" id="iv-spd" value="0"></div>
+          <div class="field"><label>Vitesse</label><input type="number" min="0" max="31" id="iv-spe" value="0"></div>
+        </div>
+
+        <div class="section-title">EVs (0–252)</div>
+        <div class="stat-grid">
+          <div class="field"><label>PV</label><input type="number" min="0" max="252" id="ev-hp" value="0"></div>
+          <div class="field"><label>Attaque</label><input type="number" min="0" max="252" id="ev-atk" value="0"></div>
+          <div class="field"><label>Défense</label><input type="number" min="0" max="252" id="ev-def" value="0"></div>
+          <div class="field"><label>Att. Spé.</label><input type="number" min="0" max="252" id="ev-spa" value="0"></div>
+          <div class="field"><label>Déf. Spé.</label><input type="number" min="0" max="252" id="ev-spd" value="0"></div>
+          <div class="field"><label>Vitesse</label><input type="number" min="0" max="252" id="ev-spe" value="0"></div>
+        </div>
+
+        <div id="vente-block">
+          <div class="section-title">Prix</div>
+          <div class="field">
+            <label>Prix (Pokédollar)</label>
+            <input type="number" min="0" id="price-input" placeholder="Ex: 5000">
+          </div>
+        </div>
+
+        <div id="echange-block" class="hidden">
+          <div class="section-title">Pokémon demandé en échange</div>
+          <div class="field autocomplete-wrap">
+            <label>Nom du Pokémon souhaité</label>
+            <input type="text" id="wanted-search" placeholder="Commence à taper un nom...">
+            <div class="autocomplete-list hidden" id="wanted-suggestions"></div>
+          </div>
+          <div class="preview-box" id="wanted-preview">
+            <span style="color:var(--text-dim); font-size:.8rem">Aucun Pokémon sélectionné</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="primary" id="submit-listing">Publier l'annonce</button>
+        </div>
+        <div class="limit-note" id="limit-note"></div>
+        <div class="error-msg" id="form-error"></div>
+      </div>
+    </section>
+
+    <!-- ---- ADMIN ---- -->
+    <section id="tab-admin" class="hidden">
+      <h2 style="font-size:1.05rem">Comptes</h2>
+      <table class="admin-table">
+        <thead><tr><th>Nom</th><th>Prénom</th><th>Rôle</th><th>Annonces actives</th><th></th></tr></thead>
+        <tbody id="admin-accounts-body"></tbody>
+      </table>
+
+      <h2 style="font-size:1.05rem; margin-top:32px">Toutes les annonces</h2>
+      <table class="admin-table">
+        <thead><tr><th>Dresseur</th><th>Type</th><th>Pokémon</th><th></th></tr></thead>
+        <tbody id="admin-listings-body"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script src="pokedata.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
