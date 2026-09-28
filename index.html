@@ -52,6 +52,12 @@
 
     <!-- ---- CONSULTER ---- -->
     <section id="tab-browse">
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Tout</button>
+        <button class="filter-btn" data-filter="vente">Ventes</button>
+        <button class="filter-btn" data-filter="enchere">Enchères</button>
+        <button class="filter-btn" data-filter="echange">Échanges</button>
+      </div>
       <div class="grid" id="listings-grid"></div>
       <div class="empty-state hidden" id="listings-empty">Aucune annonce active pour le moment.</div>
     </section>
@@ -63,6 +69,7 @@
 
         <div class="type-switch">
           <button type="button" class="selected vente" data-type="vente">Vente (Pokédollar)</button>
+          <button type="button" class="enchere" data-type="enchere">Enchère</button>
           <button type="button" class="echange" data-type="echange">Échange</button>
         </div>
 
@@ -101,6 +108,27 @@
           <div class="field">
             <label>Prix (Pokédollar)</label>
             <input type="number" min="0" id="price-input" placeholder="Ex: 5000">
+          </div>
+        </div>
+
+        <div id="enchere-block" class="hidden">
+          <div class="section-title">Enchère (Pokédollar)</div>
+          <div class="field">
+            <label>Mise de départ (Pokédollar)</label>
+            <input type="number" min="0" id="start-price-input" placeholder="Ex: 1000">
+          </div>
+          <div class="field">
+            <label>Durée (maximum 1 semaine)</label>
+            <select id="duration-select">
+              <option value="1">1 heure</option>
+              <option value="6">6 heures</option>
+              <option value="12">12 heures</option>
+              <option value="24" selected>1 jour</option>
+              <option value="48">2 jours</option>
+              <option value="72">3 jours</option>
+              <option value="120">5 jours</option>
+              <option value="168">7 jours (maximum)</option>
+            </select>
           </div>
         </div>
 
@@ -146,7 +174,14 @@
 
     <!-- ---- ADMIN ---- -->
     <section id="tab-admin" class="hidden">
-      <h2 style="font-size:1.05rem">Comptes</h2>
+      <h2 style="font-size:1.05rem">Historique des ventes</h2>
+      <div class="sales-total" id="admin-sales-total"></div>
+      <table class="admin-table">
+        <thead><tr><th>Date</th><th>Type</th><th>Pokémon</th><th>Vendeur</th><th>Acheteur</th><th>Prix</th></tr></thead>
+        <tbody id="admin-sales-body"></tbody>
+      </table>
+
+      <h2 style="font-size:1.05rem; margin-top:32px">Comptes</h2>
       <table class="admin-table">
         <thead><tr><th>Nom</th><th>Prénom</th><th>Annonces actives</th><th></th></tr></thead>
         <tbody id="admin-accounts-body"></tbody>
@@ -154,7 +189,7 @@
 
       <h2 style="font-size:1.05rem; margin-top:32px">Toutes les annonces</h2>
       <table class="admin-table">
-        <thead><tr><th>Dresseur</th><th>Type</th><th>Pokémon</th><th></th></tr></thead>
+        <thead><tr><th>Dresseur</th><th>Type</th><th>Pokémon</th><th>Statut</th><th></th></tr></thead>
         <tbody id="admin-listings-body"></tbody>
       </table>
     </section>
