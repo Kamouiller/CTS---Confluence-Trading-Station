@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTS // Cobblemon</title>
+<title>CTS - Confluence Trading Station</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
 <!-- ===================== ECRAN DE CONNEXION ===================== -->
 <div id="login-screen" class="login-screen">
   <div class="login-card">
-    <h1>GTS <span style="color:var(--cyan)">//</span> Terminal</h1>
+    <h1>CTS <span style="color:var(--cyan)">//</span> Confluence Trading Station</h1>
     <p class="sub">Connecte-toi pour déposer ou consulter des annonces d'échange et de vente.</p>
     <div class="field">
       <label>Prénom</label>
@@ -29,7 +29,7 @@
 <!-- ===================== APPLI ===================== -->
 <div id="app" class="hidden">
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>GTS<small>COBBLEMON&nbsp;TRADE&nbsp;STATION</small></div>
+    <div class="brand"><span class="dot"></span>CTS<small>CONFLUENCE&nbsp;TRADING&nbsp;STATION</small></div>
 
     <div class="online-panel">
       <span class="led"></span>
@@ -176,10 +176,7 @@
     <section id="tab-admin" class="hidden">
       <h2 style="font-size:1.05rem">Historique des ventes</h2>
       <div class="sales-total" id="admin-sales-total"></div>
-      <table class="admin-table">
-        <thead><tr><th>Date</th><th>Type</th><th>Pokémon</th><th>Vendeur</th><th>Acheteur</th><th>Prix</th></tr></thead>
-        <tbody id="admin-sales-body"></tbody>
-      </table>
+      <div id="admin-sales-body"></div>
 
       <h2 style="font-size:1.05rem; margin-top:32px">Comptes</h2>
       <table class="admin-table">

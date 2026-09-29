@@ -598,28 +598,73 @@ async function renderAdmin() {
   allAccounts = [];
   accSnap.forEach(doc => allAccounts.push({ id: doc.id, ...doc.data() }));
 
-  // ---- historique des ventes (ventes directes + enchères conclues, jamais les échanges)
+  // ---- historique des ventes (ventes directes + enchères conclues, jamais les échanges), groupé par mois
   try {
     const salesSnap = await db.collection("sales").get();
     const sales = [];
     salesSnap.forEach(doc => sales.push({ id: doc.id, ...doc.data() }));
     sales.sort((a, b) => (b.date?.toMillis?.() ?? 0) - (a.date?.toMillis?.() ?? 0));
-    const total = sales.reduce((s, x) => s + (x.price || 0), 0);
-    $("#admin-sales-total").textContent = `${sales.length} vente(s) — total ${fmtMoney(total)}`;
-    $("#admin-sales-body").innerHTML = sales.length
-      ? sales.map(s => `
-        <tr>
-          <td>${s.date?.toMillis ? fmtDate(s.date.toMillis()) : "—"}</td>
-          <td>${s.kind === "enchere" ? "Enchère" : "Vente"}</td>
-          <td>${esc(pokeName(s.pokemonId))}</td>
-          <td>${esc(s.sellerName)}</td>
-          <td>${esc(s.buyerName)}</td>
-          <td>${fmtMoney(s.price)}</td>
-        </tr>`).join("")
-      : `<tr><td colspan="6" style="color:var(--text-dim)">Aucune vente enregistrée pour le moment.</td></tr>`;
+
+    const grandTotal = sales.reduce((s, x) => s + (x.price || 0), 0);
+    $("#admin-sales-total").textContent = `${sales.length} vente(s) — total ${fmtMoney(grandTotal)}`;
+
+    // regroupement par mois (AAAA-MM), du plus récent au plus ancien
+    const groups = new Map();
+    sales.forEach(s => {
+      const ms = s.date?.toMillis ? s.date.toMillis() : Date.now();
+      const d = new Date(ms);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(s);
+    });
+
+    const monthNames = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+    const body = $("#admin-sales-body");
+    body.innerHTML = "";
+
+    if (sales.length === 0) {
+      body.innerHTML = `<div class="empty-state" style="padding:24px">Aucune vente enregistrée pour le moment.</div>`;
+    }
+
+    for (const [key, group] of groups) {
+      const [y, m] = key.split("-").map(Number);
+      const monthTotal = group.reduce((s, x) => s + (x.price || 0), 0);
+
+      const section = document.createElement("div");
+      section.className = "month-group";
+      section.innerHTML = `
+        <div class="month-header">
+          <span>${monthNames[m - 1]} ${y}</span>
+          <span class="month-total">${group.length} vente(s) — ${fmtMoney(monthTotal)}</span>
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Date</th><th>Type</th><th>Pokémon</th><th>Vendeur</th><th>Acheteur</th><th>Prix</th><th></th></tr></thead>
+          <tbody>
+            ${group.map(s => `
+              <tr data-sale-id="${s.id}">
+                <td>${s.date?.toMillis ? fmtDate(s.date.toMillis()) : "—"}</td>
+                <td>${s.kind === "enchere" ? "Enchère" : "Vente"}</td>
+                <td>${esc(pokeName(s.pokemonId))}</td>
+                <td>${esc(s.sellerName)}</td>
+                <td>${esc(s.buyerName)}</td>
+                <td>${fmtMoney(s.price)}</td>
+                <td><button class="danger delete-sale-btn" data-id="${s.id}">Supprimer</button></td>
+              </tr>`).join("")}
+          </tbody>
+        </table>`;
+      body.appendChild(section);
+    }
+
+    $all(".delete-sale-btn", body).forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Supprimer cette vente de l'historique ? Cette action est définitive.")) return;
+        await db.collection("sales").doc(btn.dataset.id).delete();
+        renderAdmin();
+      });
+    });
   } catch (e) {
     console.error(e);
-    $("#admin-sales-body").innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Impossible de lire l'historique (règle Firestore "sales" manquante ?).</td></tr>`;
+    $("#admin-sales-body").innerHTML = `<div style="color:var(--danger)">Impossible de lire l'historique (règle Firestore "sales" manquante ?).</div>`;
   }
 
   // ---- comptes
