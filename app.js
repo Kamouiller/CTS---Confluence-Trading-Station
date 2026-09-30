@@ -61,9 +61,10 @@ function slugify(str) {
 function esc(str) {
   return String(str ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
-function spriteUrl(pokeId) {
+function spriteUrl(pokeId, shiny) {
   const entry = POKEDEX[pokeId];
-  return entry ? "data:image/png;base64," + entry[1] : "";
+  if (!entry) return "";
+  return "data:image/png;base64," + (shiny ? entry[2] : entry[1]);
 }
 function pokeName(pokeId) {
   const entry = POKEDEX[pokeId];
@@ -312,11 +313,15 @@ function renderListings() {
     } else if (l.type === "echange") {
       middle = `
         <div class="trade-arrow">
-          <img src="${spriteUrl(l.pokemonId)}" alt="">
-          <span>contre</span>
-          <img src="${spriteUrl(l.wantedPokemonId)}" alt="">
-          <span>${esc(pokeName(l.wantedPokemonId))}</span>
-          <span class="type-row">${typeIcons(l.wantedPokemonId)}</span>
+          <div class="trade-side">
+            <div class="trade-sprite-box${l.shinyWanted ? " shiny" : ""}">
+              <img src="${spriteUrl(l.wantedPokemonId, l.shinyWanted)}" alt="">
+              ${l.shinyWanted ? '<span class="shiny-badge">✨</span>' : ""}
+            </div>
+            <span>${esc(pokeName(l.wantedPokemonId))}</span>
+            <span class="type-row">${typeIcons(l.wantedPokemonId)}</span>
+            ${l.abilityWanted ? `<div class="ability-line">Talent : ${esc(l.abilityWanted)}</div>` : ""}
+          </div>
         </div>`;
     } else if (l.type === "enchere") {
       const hasBid = (l.bidCount || 0) > 0;
@@ -351,12 +356,16 @@ function renderListings() {
 
     return `
       <div class="card ${l.type}" data-id="${l.id}">
+        <div class="card-sprite-box${l.shiny ? " shiny" : ""}">
+          <img src="${spriteUrl(l.pokemonId, l.shiny)}" alt="">
+          ${l.shiny ? '<span class="shiny-badge">✨</span>' : ""}
+        </div>
         <div class="card-top">
-          <img src="${spriteUrl(l.pokemonId)}" alt="">
           <div>
             <div class="card-title">${esc(pokeName(l.pokemonId))}</div>
             <div class="type-row">${typeIcons(l.pokemonId)}</div>
             <div class="card-type">${typeLabel}</div>
+            ${l.ability ? `<div class="ability-line">Talent : ${esc(l.ability)}</div>` : ""}
           </div>
         </div>
         ${middle}
@@ -562,16 +571,29 @@ function setupAutocomplete(inputSel, listSel, onPick) {
   });
 }
 
+function refreshPokePreview() {
+  if (!selectedPoke) return;
+  const shiny = $("#shiny-checkbox").checked;
+  const box = $("#poke-preview");
+  box.innerHTML = `<div class="trade-sprite-box${shiny ? " shiny" : ""}"><img src="${spriteUrl(selectedPoke.id, shiny)}">${shiny ? '<span class="shiny-badge">✨</span>' : ""}</div><span>${esc(selectedPoke.name)}</span><span class="type-row">${typeIcons(selectedPoke.id)}</span>`;
+}
+function refreshWantedPreview() {
+  if (!selectedWanted) return;
+  const shiny = $("#wanted-shiny-checkbox").checked;
+  const box = $("#wanted-preview");
+  box.innerHTML = `<div class="trade-sprite-box${shiny ? " shiny" : ""}"><img src="${spriteUrl(selectedWanted.id, shiny)}">${shiny ? '<span class="shiny-badge">✨</span>' : ""}</div><span>${esc(selectedWanted.name)}</span><span class="type-row">${typeIcons(selectedWanted.id)}</span>`;
+}
+
 setupAutocomplete("#poke-search", "#poke-suggestions", (p) => {
   selectedPoke = p;
-  const box = $("#poke-preview");
-  box.innerHTML = `<img src="${spriteUrl(p.id)}"><span>${esc(p.name)}</span><span class="type-row">${typeIcons(p.id)}</span>`;
+  refreshPokePreview();
 });
 setupAutocomplete("#wanted-search", "#wanted-suggestions", (p) => {
   selectedWanted = p;
-  const box = $("#wanted-preview");
-  box.innerHTML = `<img src="${spriteUrl(p.id)}"><span>${esc(p.name)}</span><span class="type-row">${typeIcons(p.id)}</span>`;
+  refreshWantedPreview();
 });
+$("#shiny-checkbox").addEventListener("change", refreshPokePreview);
+$("#wanted-shiny-checkbox").addEventListener("change", refreshWantedPreview);
 
 /* ---------------------------------------------------------- publier */
 
@@ -604,12 +626,15 @@ $("#submit-listing").addEventListener("click", async () => {
     type: selectedType,
     status: "actif",
     pokemonId: selectedPoke.id,
+    shiny: $("#shiny-checkbox").checked,
     ivs: readGrid("iv", 31),
     evs: readGrid("ev", 252),
     sellerAccountId: currentAccountId,
     sellerName: `${currentAccount.prenom} ${currentAccount.nom}`,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
+  const ability = $("#ability-input").value.trim();
+  if (ability) listing.ability = ability;
 
   if (selectedType === "vente") {
     const price = parseInt($("#price-input").value, 10);
@@ -633,8 +658,11 @@ $("#submit-listing").addEventListener("click", async () => {
     listing.endsAt = Date.now() + hours * 3600 * 1000;
   } else {
     listing.wantedPokemonId = selectedWanted.id;
+    listing.shinyWanted = $("#wanted-shiny-checkbox").checked;
     listing.ivsWanted = readGrid("iv-wanted", 31);
     listing.evsWanted = readGrid("ev-wanted", 252);
+    const abilityWanted = $("#wanted-ability-input").value.trim();
+    if (abilityWanted) listing.abilityWanted = abilityWanted;
   }
 
   try {
@@ -657,6 +685,10 @@ function resetForm() {
   $("#wanted-preview").innerHTML = empty;
   $("#price-input").value = "";
   $("#start-price-input").value = "";
+  $("#ability-input").value = "";
+  $("#wanted-ability-input").value = "";
+  $("#shiny-checkbox").checked = false;
+  $("#wanted-shiny-checkbox").checked = false;
   $all('.stat-grid input[type=number]').forEach(i => i.value = 0);
 }
 
