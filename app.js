@@ -6,6 +6,36 @@
 const LS_KEY = "gts_account_id";
 const PRESENCE_TTL_MS = 45_000;
 const DEFAULT_MAX_LISTINGS = 2;
+
+// Types Pokémon : libellé français + couleur pour les icônes
+const TYPE_INFO = {
+  normal:   { fr: "Normal",   color: "#a8a878" },
+  fire:     { fr: "Feu",      color: "#f08030" },
+  water:    { fr: "Eau",      color: "#6890f0" },
+  electric: { fr: "Électrik", color: "#f8d030" },
+  grass:    { fr: "Plante",   color: "#78c850" },
+  ice:      { fr: "Glace",    color: "#98d8d8" },
+  fighting: { fr: "Combat",   color: "#c03028" },
+  poison:   { fr: "Poison",   color: "#a040a0" },
+  ground:   { fr: "Sol",      color: "#e0c068" },
+  flying:   { fr: "Vol",      color: "#a890f0" },
+  psychic:  { fr: "Psy",      color: "#f85888" },
+  bug:      { fr: "Insecte",  color: "#a8b820" },
+  rock:     { fr: "Roche",    color: "#b8a038" },
+  ghost:    { fr: "Spectre",  color: "#705898" },
+  dragon:   { fr: "Dragon",   color: "#7038f8" },
+  dark:     { fr: "Ténèbres", color: "#705848" },
+  steel:    { fr: "Acier",    color: "#b8b8d0" },
+  fairy:    { fr: "Fée",      color: "#ee99ac" },
+};
+
+function typeIcons(pokeId) {
+  const types = POKETYPES[pokeId] || [];
+  return types.map(t => {
+    const info = TYPE_INFO[t] || { fr: t, color: "#888" };
+    return `<span class="type-chip" style="background:${info.color}">${esc(info.fr)}</span>`;
+  }).join("");
+}
 const MAX_AUCTION_HOURS = 168; // 1 semaine
 
 let currentAccountId = null;
@@ -133,6 +163,39 @@ $("#logout-btn").addEventListener("click", async () => {
   if (saved) await loginAs(saved);
 })();
 
+/* ---------------------------------------------------------- résumé de mes ventes */
+
+$("#my-sales-btn").addEventListener("click", async () => {
+  $("#my-sales-modal").classList.remove("hidden");
+  const body = $("#my-sales-body");
+  body.innerHTML = `<tr><td colspan="5" style="color:var(--text-dim)">Chargement...</td></tr>`;
+  try {
+    const snap = await db.collection("sales").where("sellerAccountId", "==", currentAccountId).get();
+    const sales = [];
+    snap.forEach(doc => sales.push(doc.data()));
+    sales.sort((a, b) => (b.date?.toMillis?.() ?? 0) - (a.date?.toMillis?.() ?? 0));
+    const total = sales.reduce((s, x) => s + (x.price || 0), 0);
+    $("#my-sales-total").textContent = `${sales.length} vente(s) — total encaissé ${fmtMoney(total)}`;
+    body.innerHTML = sales.length
+      ? sales.map(s => `
+        <tr>
+          <td>${s.date?.toMillis ? fmtDate(s.date.toMillis()) : "—"}</td>
+          <td>${s.kind === "enchere" ? "Enchère" : "Vente"}</td>
+          <td>${esc(pokeName(s.pokemonId))}</td>
+          <td>${esc(s.buyerName)}</td>
+          <td>${fmtMoney(s.price)}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="5" style="color:var(--text-dim)">Aucune vente pour le moment.</td></tr>`;
+  } catch (e) {
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="5" style="color:var(--danger)">Impossible de charger l'historique.</td></tr>`;
+  }
+});
+$("#my-sales-close").addEventListener("click", () => $("#my-sales-modal").classList.add("hidden"));
+$("#my-sales-modal").addEventListener("click", (e) => {
+  if (e.target.id === "my-sales-modal") $("#my-sales-modal").classList.add("hidden");
+});
+
 /* ---------------------------------------------------------- présence */
 
 function touchPresence() {
@@ -253,6 +316,7 @@ function renderListings() {
           <span>contre</span>
           <img src="${spriteUrl(l.wantedPokemonId)}" alt="">
           <span>${esc(pokeName(l.wantedPokemonId))}</span>
+          <span class="type-row">${typeIcons(l.wantedPokemonId)}</span>
         </div>`;
     } else if (l.type === "enchere") {
       const hasBid = (l.bidCount || 0) > 0;
@@ -291,6 +355,7 @@ function renderListings() {
           <img src="${spriteUrl(l.pokemonId)}" alt="">
           <div>
             <div class="card-title">${esc(pokeName(l.pokemonId))}</div>
+            <div class="type-row">${typeIcons(l.pokemonId)}</div>
             <div class="card-type">${typeLabel}</div>
           </div>
         </div>
@@ -500,12 +565,12 @@ function setupAutocomplete(inputSel, listSel, onPick) {
 setupAutocomplete("#poke-search", "#poke-suggestions", (p) => {
   selectedPoke = p;
   const box = $("#poke-preview");
-  box.innerHTML = `<img src="${spriteUrl(p.id)}"><span>${esc(p.name)}</span>`;
+  box.innerHTML = `<img src="${spriteUrl(p.id)}"><span>${esc(p.name)}</span><span class="type-row">${typeIcons(p.id)}</span>`;
 });
 setupAutocomplete("#wanted-search", "#wanted-suggestions", (p) => {
   selectedWanted = p;
   const box = $("#wanted-preview");
-  box.innerHTML = `<img src="${spriteUrl(p.id)}"><span>${esc(p.name)}</span>`;
+  box.innerHTML = `<img src="${spriteUrl(p.id)}"><span>${esc(p.name)}</span><span class="type-row">${typeIcons(p.id)}</span>`;
 });
 
 /* ---------------------------------------------------------- publier */

@@ -356,3 +356,32 @@ select:focus{outline:none; border-color:var(--cyan); box-shadow:0 0 0 2px var(--
 .month-total{
   font-family:'IBM Plex Mono', monospace; font-weight:400; font-size:.78rem; color:var(--amber);
 }
+
+/* ---------- puces de type ---------- */
+.type-row{display:flex; gap:4px; flex-wrap:wrap; margin-top:3px;}
+.type-chip{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:.62rem;
+  font-weight:500;
+  color:#0a0e1a;
+  padding:2px 7px;
+  border-radius:999px;
+  letter-spacing:.02em;
+}
+.preview-box .type-row{margin-top:0;}
+
+/* ---------- modale résumé de mes ventes ---------- */
+.modal-overlay{
+  position:fixed; inset:0; z-index:50;
+  background:rgba(4,7,14,.75); backdrop-filter:blur(3px);
+  display:flex; align-items:flex-start; justify-content:center;
+  padding:40px 20px; overflow-y:auto;
+}
+.modal-box{
+  width:100%; max-width:760px;
+  background:var(--panel); border:1px solid var(--cyan);
+  box-shadow:0 0 24px -4px var(--cyan-dim);
+  border-radius:var(--radius); padding:22px 24px;
+}
+.modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+.modal-header h2{margin:0; font-size:1.05rem;}
