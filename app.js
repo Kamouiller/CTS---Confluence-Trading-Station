@@ -5,7 +5,7 @@
 
 const LS_KEY = "gts_account_id";
 const PRESENCE_TTL_MS = 45_000;
-const MAX_LISTINGS_PER_ACCOUNT = 5;
+const DEFAULT_MAX_LISTINGS = 2;
 const MAX_AUCTION_HOURS = 168; // 1 semaine
 
 let currentAccountId = null;
@@ -441,13 +441,17 @@ async function finalizeExpiredAuctions() {
 
 /* ---------------------------------------------------------- limite */
 
+function myMaxListings() {
+  return currentAccount && currentAccount.maxListings != null ? currentAccount.maxListings : DEFAULT_MAX_LISTINGS;
+}
 function myActiveListingsCount() {
   return allListings.filter(l => l.sellerAccountId === currentAccountId).length;
 }
 function updateLimitNote() {
   const count = myActiveListingsCount();
-  $("#limit-note").textContent = `${count}/${MAX_LISTINGS_PER_ACCOUNT} annonces sur ton compte (retire les annonces terminées pour libérer de la place).`;
-  $("#submit-listing").disabled = count >= MAX_LISTINGS_PER_ACCOUNT;
+  const max = myMaxListings();
+  $("#limit-note").textContent = `${count}/${max} annonces sur ton compte (retire les annonces terminées pour libérer de la place).`;
+  $("#submit-listing").disabled = count >= max;
 }
 
 /* ---------------------------------------------------------- formulaire : type */
@@ -518,8 +522,8 @@ $("#submit-listing").addEventListener("click", async () => {
   const errBox = $("#form-error");
   errBox.textContent = "";
 
-  if (myActiveListingsCount() >= MAX_LISTINGS_PER_ACCOUNT) {
-    errBox.textContent = `Limite de ${MAX_LISTINGS_PER_ACCOUNT} annonces atteinte.`;
+  if (myActiveListingsCount() >= myMaxListings()) {
+    errBox.textContent = `Limite de ${myMaxListings()} annonces atteinte.`;
     return;
   }
   if (!selectedPoke) {
@@ -674,8 +678,27 @@ async function renderAdmin() {
       <td>${esc(a.nom)}</td>
       <td>${esc(a.prenom)}</td>
       <td>${allListings.filter(l => l.sellerAccountId === a.id).length}</td>
-      <td><button class="danger delete-account-btn" data-id="${a.id}">Supprimer</button></td>
+      <td>
+        <input type="number" min="0" class="slot-input" data-id="${a.id}" value="${a.maxListings != null ? a.maxListings : DEFAULT_MAX_LISTINGS}" style="width:64px">
+      </td>
+      <td>
+        <button class="ghost save-slots-btn" data-id="${a.id}">Enregistrer</button>
+        <button class="danger delete-account-btn" data-id="${a.id}">Supprimer</button>
+      </td>
     </tr>`).join("");
+  $all(".save-slots-btn", accBody).forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const input = accBody.querySelector(`.slot-input[data-id="${btn.dataset.id}"]`);
+      const val = clampInt(input.value, 0, 999);
+      await db.collection("accounts").doc(btn.dataset.id).update({ maxListings: val });
+      if (btn.dataset.id === currentAccountId) {
+        currentAccount.maxListings = val;
+        updateLimitNote();
+      }
+      btn.textContent = "Enregistré ✓";
+      setTimeout(() => { btn.textContent = "Enregistrer"; }, 1500);
+    });
+  });
   $all(".delete-account-btn", accBody).forEach(btn => {
     btn.addEventListener("click", async () => {
       if (!confirm("Supprimer ce compte ? Ses annonces resteront visibles mais ne pourront plus être retirées que par un admin.")) return;
