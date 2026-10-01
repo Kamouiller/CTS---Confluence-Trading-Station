@@ -276,15 +276,26 @@ function createdMs(l) {
   return l.createdAt && l.createdAt.toMillis ? l.createdAt.toMillis() : Date.now();
 }
 
-function statsRow(label, ivs, evs) {
+function statsRow(ivLabel, evLabel, ivs, evs) {
   if (!ivs || !evs) return "";
   return `
     <div class="stats-row">
       <table>
-        <tr><td class="k">IV${label}</td><td>PV ${ivs.hp}</td><td>Atk ${ivs.atk}</td><td>Def ${ivs.def}</td><td>ASp ${ivs.spa}</td><td>DSp ${ivs.spd}</td><td>Vit ${ivs.spe}</td></tr>
-        <tr><td class="k">EV${label}</td><td>PV ${evs.hp}</td><td>Atk ${evs.atk}</td><td>Def ${evs.def}</td><td>ASp ${evs.spa}</td><td>DSp ${evs.spd}</td><td>Vit ${evs.spe}</td></tr>
+        <tr><td class="k">IV${ivLabel}</td><td>PV ${ivs.hp}</td><td>Atk ${ivs.atk}</td><td>Def ${ivs.def}</td><td>ASp ${ivs.spa}</td><td>DSp ${ivs.spd}</td><td>Vit ${ivs.spe}</td></tr>
+        <tr><td class="k">EV${evLabel}</td><td>PV ${evs.hp}</td><td>Atk ${evs.atk}</td><td>Def ${evs.def}</td><td>ASp ${evs.spa}</td><td>DSp ${evs.spd}</td><td>Vit ${evs.spe}</td></tr>
       </table>
     </div>`;
+}
+
+const GENDER_INFO = {
+  male: { symbol: "♂", fr: "Mâle", color: "#6890f0" },
+  female: { symbol: "♀", fr: "Femelle", color: "#f85888" },
+  genderless: { symbol: "⚥", fr: "Asexué", color: "#a8a8a8" },
+};
+function genderBadge(gender, prefix) {
+  const info = GENDER_INFO[gender];
+  if (!info) return "";
+  return `<span class="gender-badge" style="color:${info.color}">${info.symbol} ${esc(prefix || "")}${esc(info.fr)}</span>`;
 }
 
 function renderListings() {
@@ -320,6 +331,7 @@ function renderListings() {
             </div>
             <span>${esc(pokeName(l.wantedPokemonId))}</span>
             <span class="type-row">${typeIcons(l.wantedPokemonId)}</span>
+            ${l.genderWanted ? genderBadge(l.genderWanted, "") : ""}
             ${l.abilityWanted ? `<div class="ability-line">Talent : ${esc(l.abilityWanted)}</div>` : ""}
           </div>
         </div>`;
@@ -365,13 +377,14 @@ function renderListings() {
             <div class="card-title">${esc(pokeName(l.pokemonId))}</div>
             <div class="type-row">${typeIcons(l.pokemonId)}</div>
             <div class="card-type">${typeLabel}</div>
+            ${l.gender ? genderBadge(l.gender) : ""}
             ${l.ability ? `<div class="ability-line">Talent : ${esc(l.ability)}</div>` : ""}
           </div>
         </div>
         ${middle}
         ${banner}
-        ${statsRow("", l.ivs, l.evs)}
-        ${l.type === "echange" ? statsRow(" voulus", l.ivsWanted, l.evsWanted) : ""}
+        ${statsRow("", "", l.ivs, l.evs)}
+        ${l.type === "echange" ? statsRow(" min.", " voulus", l.ivsWanted, l.evsWanted) : ""}
         <div class="card-footer">
           <div class="seller">Dresseur : <b>${esc(l.sellerName)}</b></div>
           <div class="card-actions">${actions}</div>
@@ -635,6 +648,8 @@ $("#submit-listing").addEventListener("click", async () => {
   };
   const ability = $("#ability-input").value.trim();
   if (ability) listing.ability = ability;
+  const gender = $("#gender-select").value;
+  if (gender) listing.gender = gender;
 
   if (selectedType === "vente") {
     const price = parseInt($("#price-input").value, 10);
@@ -663,6 +678,8 @@ $("#submit-listing").addEventListener("click", async () => {
     listing.evsWanted = readGrid("ev-wanted", 252);
     const abilityWanted = $("#wanted-ability-input").value.trim();
     if (abilityWanted) listing.abilityWanted = abilityWanted;
+    const genderWanted = $("#wanted-gender-select").value;
+    if (genderWanted) listing.genderWanted = genderWanted;
   }
 
   try {
@@ -687,6 +704,8 @@ function resetForm() {
   $("#start-price-input").value = "";
   $("#ability-input").value = "";
   $("#wanted-ability-input").value = "";
+  $("#gender-select").value = "";
+  $("#wanted-gender-select").value = "";
   $("#shiny-checkbox").checked = false;
   $("#wanted-shiny-checkbox").checked = false;
   $all('.stat-grid input[type=number]').forEach(i => i.value = 0);

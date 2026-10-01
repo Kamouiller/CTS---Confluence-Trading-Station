@@ -87,6 +87,15 @@
           <label>Talent (capacité spéciale)</label>
           <input type="text" id="ability-input" placeholder="Ex: Chlorophylle">
         </div>
+        <div class="field">
+          <label>Sexe</label>
+          <select id="gender-select">
+            <option value="">Non précisé</option>
+            <option value="male">Mâle</option>
+            <option value="female">Femelle</option>
+            <option value="genderless">Asexué</option>
+          </select>
+        </div>
         <label class="shiny-toggle"><input type="checkbox" id="shiny-checkbox"> Pokémon shiny ✨</label>
 
         <div class="section-title">IVs (0–31)</div>
@@ -152,9 +161,18 @@
             <label>Talent souhaité</label>
             <input type="text" id="wanted-ability-input" placeholder="Ex: Intimidation">
           </div>
+          <div class="field">
+            <label>Sexe souhaité</label>
+            <select id="wanted-gender-select">
+              <option value="">Peu importe</option>
+              <option value="male">Mâle</option>
+              <option value="female">Femelle</option>
+              <option value="genderless">Asexué</option>
+            </select>
+          </div>
           <label class="shiny-toggle"><input type="checkbox" id="wanted-shiny-checkbox"> Shiny souhaité ✨</label>
 
-          <div class="section-title">IVs souhaités (0–31)</div>
+          <div class="section-title">IVs minimum souhaités (0–31)</div>
           <div class="stat-grid">
             <div class="field"><label>PV</label><input type="number" min="0" max="31" id="iv-wanted-hp" value="0"></div>
             <div class="field"><label>Attaque</label><input type="number" min="0" max="31" id="iv-wanted-atk" value="0"></div>
